@@ -1,0 +1,33 @@
+{
+  "name": "x402-sandbox",
+  "version": "1.0.0",
+  "description": "Developer sandbox for testing x402 payment flows with mock nodes",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev:seller": "tsx src/mock-seller/index.ts",
+    "dev:facilitator": "tsx src/mock-facilitator/index.ts",
+    "launch": "tsx src/launcher/index.ts",
+    "test": "jest"
+  },
+  "keywords": ["x402", "solana", "payments", "api", "mock", "testing"],
+  "author": "X402 Developer",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/cors": "^2.8.17",
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.2",
+    "tsx": "^4.6.2",
+    "jest": "^29.7.0",
+    "@types/jest": "^29.5.8"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
