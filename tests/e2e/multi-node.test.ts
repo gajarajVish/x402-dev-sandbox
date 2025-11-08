@@ -58,7 +58,7 @@ describe('E2E: Multi-Node Network Scenarios', () => {
       const response = await fetch(`http://localhost:${port}/health`);
 
       expect(response.status).toBe(200);
-      const data = await response.json();
+      const data = await response.json() as any;
       expect(data.status).toBe('ok');
       expect(data.service).toBe('mock-seller');
       expect(data.port).toBe(port);
@@ -80,7 +80,7 @@ describe('E2E: Multi-Node Network Scenarios', () => {
       );
 
       expect(response.status).toBe(200);
-      const data = await response.json();
+      const data = await response.json() as any;
       expect(data.result).toContain(`Test seller ${i}`);
       expect(data.cost_charged).toBe(1000 + i * 100);
     }
@@ -126,7 +126,7 @@ describe('E2E: Multi-Node Network Scenarios', () => {
       });
 
       expect(response.status).toBe(402);
-      const data = await response.json();
+      const data = await response.json() as any;
       prices.push(data.payment_requirements.amount);
     }
 
@@ -154,7 +154,7 @@ describe('E2E: Multi-Node Network Scenarios', () => {
         );
 
         expect(response.status).toBe(200);
-        const data = await response.json();
+        const data = await response.json() as any;
         results.push({
           seller: i,
           round,
@@ -185,7 +185,7 @@ describe('E2E: Multi-Node Network Scenarios', () => {
         body: JSON.stringify({ prompt: 'test' }),
       });
 
-      const data402 = await response402.json();
+      const data402 = await response402.json() as any;
       const requirements = data402.payment_requirements;
 
       // Verify all sellers point to same facilitator
@@ -203,7 +203,7 @@ describe('E2E: Multi-Node Network Scenarios', () => {
         }),
       });
 
-      const verifyData = await verifyResponse.json();
+      const verifyData = await verifyResponse.json() as any;
       expect(verifyData.ok).toBe(true);
       verifications.add(verifyData.verification);
     }

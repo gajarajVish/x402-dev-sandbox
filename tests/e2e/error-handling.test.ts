@@ -52,7 +52,7 @@ describe('E2E: Error Handling Scenarios', () => {
       });
 
       expect(response.status).toBe(403);
-      const data = await response.json();
+      const data = await response.json() as any;
       expect(data.error).toBe('invalid_payment');
     });
 
@@ -90,7 +90,7 @@ describe('E2E: Error Handling Scenarios', () => {
       });
 
       expect(response.status).toBe(400);
-      const data = await response.json();
+      const data = await response.json() as any;
       expect(data.ok).toBe(false);
       expect(data.error).toBe('invalid_request');
       expect(data.detail).toContain('Missing required fields');
@@ -108,7 +108,7 @@ describe('E2E: Error Handling Scenarios', () => {
       });
 
       expect(response.status).toBe(400);
-      const data = await response.json();
+      const data = await response.json() as any;
       expect(data.ok).toBe(false);
     });
   });
@@ -136,7 +136,7 @@ describe('E2E: Error Handling Scenarios', () => {
       });
 
       expect(response.status).toBe(402);
-      const data = await response.json();
+      const data = await response.json() as any;
       expect(data.error).toBe('payment_required');
       expect(data.payment_requirements).toBeDefined();
     });
@@ -232,7 +232,7 @@ describe('E2E: Error Handling Scenarios', () => {
       });
 
       expect(response.status).toBe(200);
-      const data = await response.json();
+      const data = await response.json() as any;
       expect(data.ok).toBe(true);
     });
 
@@ -280,7 +280,7 @@ describe('E2E: Error Handling Scenarios', () => {
         expect(response.status).toBe(200);
       });
 
-      const data = await Promise.all(responses.map(r => r.json()));
+      const data = await Promise.all(responses.map(r => r.json())) as any[];
       data.forEach((d) => {
         expect(d.ok).toBe(true);
         expect(d.verification).toMatch(/^mock-sig:/);

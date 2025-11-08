@@ -62,7 +62,7 @@ describe('E2E: Basic 402 Payment Flow', () => {
 
     expect(response.status).toBe(200);
 
-    const data = await response.json();
+    const data = await response.json() as any;
     expect(data.result).toContain('E2E test prompt');
     expect(data.cost_charged).toBe(1000);
     expect(data.timestamp).toBeDefined();
@@ -82,7 +82,7 @@ describe('E2E: Basic 402 Payment Flow', () => {
       );
 
       expect(response.status).toBe(200);
-      const data = await response.json();
+      const data = await response.json() as any;
       expect(data.result).toContain(`Test ${i}`);
     }
   });
@@ -97,7 +97,7 @@ describe('E2E: Basic 402 Payment Flow', () => {
 
     expect(response.status).toBe(402);
 
-    const data = await response.json();
+    const data = await response.json() as any;
     expect(data.error).toBe('payment_required');
     expect(data.payment_requirements).toBeDefined();
 
@@ -124,7 +124,7 @@ describe('E2E: Basic 402 Payment Flow', () => {
     });
 
     expect(initialResponse.status).toBe(402);
-    const paymentData = await initialResponse.json();
+    const paymentData = await initialResponse.json() as any;
     const requirements = paymentData.payment_requirements;
 
     // Step 2: Verify payment with facilitator
@@ -140,7 +140,7 @@ describe('E2E: Basic 402 Payment Flow', () => {
     });
 
     expect(verifyResponse.status).toBe(200);
-    const verifyData = await verifyResponse.json();
+    const verifyData = await verifyResponse.json() as any;
     expect(verifyData.ok).toBe(true);
     expect(verifyData.verification).toMatch(/^mock-sig:/);
 
@@ -155,7 +155,7 @@ describe('E2E: Basic 402 Payment Flow', () => {
     });
 
     expect(retryResponse.status).toBe(200);
-    const result = await retryResponse.json();
+    const result = await retryResponse.json() as any;
     expect(result.result).toContain('manual test');
   });
 
@@ -170,20 +170,20 @@ describe('E2E: Basic 402 Payment Flow', () => {
     });
 
     expect(response.status).toBe(403);
-    const data = await response.json();
+    const data = await response.json() as any;
     expect(data.error).toBe('invalid_payment');
   });
 
   it('should check health endpoints', async () => {
     const sellerHealth = await fetch(`http://localhost:${sellerPort}/health`);
     expect(sellerHealth.status).toBe(200);
-    const sellerData = await sellerHealth.json();
+    const sellerData = await sellerHealth.json() as any;
     expect(sellerData.status).toBe('ok');
     expect(sellerData.service).toBe('mock-seller');
 
     const facilitatorHealth = await fetch(`http://localhost:${facilitatorPort}/health`);
     expect(facilitatorHealth.status).toBe(200);
-    const facilitatorData = await facilitatorHealth.json();
+    const facilitatorData = await facilitatorHealth.json() as any;
     expect(facilitatorData.status).toBe('ok');
     expect(facilitatorData.service).toBe('mock-facilitator');
   });
