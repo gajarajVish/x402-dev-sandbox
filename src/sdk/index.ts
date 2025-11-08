@@ -64,7 +64,7 @@ export class X402Client {
   }
 
   async parsePaymentRequirements(response: Response): Promise<PaymentRequirements> {
-    const body = await response.json();
+    const body = await response.json() as any;
 
     if (!body.payment_requirements) {
       throw new Error('402 response missing payment_requirements field');
@@ -100,12 +100,12 @@ export class X402Client {
       }),
     });
 
-    const result = await response.json();
+    const result = await response.json() as any;
 
     if (!result.ok) {
       throw new Error(`Payment verification failed: ${result.error}`);
     }
 
-    return result.verification;
+    return result.verification as string;
   }
 }
