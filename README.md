@@ -494,15 +494,6 @@ Special thanks to:
 - Solana developer community
 - Open source contributors
 
----
-
-## 📞 Support
-
-- **Issues**: [GitHub Issues](https://github.com/yourusername/x402-sandbox/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/x402-sandbox/discussions)
-- **Documentation**: [docs/](docs/)
-
----
 
 ## 🌟 Show Your Support
 
