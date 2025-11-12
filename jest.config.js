@@ -22,12 +22,13 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
-  globals: {
-    'ts-jest': {
+  transform: {
+    '^.+\\.ts$': ['ts-jest', {
       tsconfig: {
         strict: false,
         noImplicitAny: false,
       },
-    },
+    }],
   },
+  maxWorkers: 1,
 };

@@ -50,19 +50,21 @@ app.get('/health', (_req: Request, res: Response) => {
 
 app.post('/inference', (req: Request, res: Response) => {
   const paymentHeader = req.header('X-PAYMENT');
-  
-  if (!paymentHeader) {
+
+  // Check if payment header is completely missing (undefined)
+  if (paymentHeader === undefined) {
     const requirements = generatePaymentRequirements();
     console.log(`[402] Payment required for request. ID: ${requirements.id}`);
-    
+
     return res.status(402).json({
       error: 'payment_required',
       message: 'Payment is required to access this resource',
       payment_requirements: requirements,
     });
   }
-  
-  if (!isValidPaymentToken(paymentHeader)) {
+
+  // If header is present but empty or invalid, return 403
+  if (!paymentHeader || paymentHeader.trim() === '' || !isValidPaymentToken(paymentHeader)) {
     console.log(`[403] Invalid payment token`);
     return res.status(403).json({
       error: 'invalid_payment',

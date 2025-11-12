@@ -31,7 +31,18 @@ describe('E2E: Error Handling Scenarios', () => {
       stdio: 'pipe',
     });
 
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    // Wait longer for servers to start and add health check
+    await new Promise(resolve => setTimeout(resolve, 4000));
+
+    // Verify servers are actually running
+    try {
+      const healthCheck = await fetch(`http://localhost:${facilitatorPort}/health`);
+      if (!healthCheck.ok) {
+        console.error('Facilitator health check failed');
+      }
+    } catch (error) {
+      console.error('Failed to connect to facilitator:', error);
+    }
   });
 
   afterAll(async () => {
@@ -189,32 +200,40 @@ describe('E2E: Error Handling Scenarios', () => {
     it('should throw on verification failure', async () => {
       const client = new X402Client();
 
-      const mockFetch = jest.fn().mockResolvedValue({
-        json: async () => ({
-          ok: false,
-          error: 'test_error',
-        }),
-      });
-      global.fetch = mockFetch as any;
+      // Save original fetch
+      const originalFetch = global.fetch;
 
-      const proof = {
-        payer: 'test',
-        timestamp: new Date().toISOString(),
-      };
+      try {
+        const mockFetch = jest.fn().mockResolvedValue({
+          json: async () => ({
+            ok: false,
+            error: 'test_error',
+          }),
+        });
+        global.fetch = mockFetch as any;
 
-      const requirements = {
-        id: 'test',
-        product: 'test',
-        amount: 1000,
-        currency: 'USDC',
-        chain: 'solana',
-        facilitator: 'http://test/verify',
-        expires_at: new Date().toISOString(),
-      };
+        const proof = {
+          payer: 'test',
+          timestamp: new Date().toISOString(),
+        };
 
-      await expect(
-        client.verifyPayment(proof, requirements)
-      ).rejects.toThrow('Payment verification failed: test_error');
+        const requirements = {
+          id: 'test',
+          product: 'test',
+          amount: 1000,
+          currency: 'USDC',
+          chain: 'solana',
+          facilitator: 'http://test/verify',
+          expires_at: new Date().toISOString(),
+        };
+
+        await expect(
+          client.verifyPayment(proof, requirements)
+        ).rejects.toThrow('Payment verification failed: test_error');
+      } finally {
+        // Restore original fetch
+        global.fetch = originalFetch;
+      }
     });
   });
 
@@ -231,6 +250,7 @@ describe('E2E: Error Handling Scenarios', () => {
         }),
       });
 
+      expect(response).toBeDefined();
       expect(response.status).toBe(200);
       const data = await response.json() as any;
       expect(data.ok).toBe(true);
@@ -256,6 +276,7 @@ describe('E2E: Error Handling Scenarios', () => {
           }),
         });
 
+        expect(response).toBeDefined();
         expect(response.status).toBe(200);
       }
     });
@@ -276,7 +297,11 @@ describe('E2E: Error Handling Scenarios', () => {
 
       const responses = await Promise.all(promises);
 
-      responses.forEach((response) => {
+      responses.forEach((response, index) => {
+        expect(response).toBeDefined();
+        if (!response || response.status !== 200) {
+          console.error(`Response ${index} failed:`, response);
+        }
         expect(response.status).toBe(200);
       });
 
