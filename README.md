@@ -16,6 +16,8 @@ Perfect for hackathons, rapid prototyping, and learning the x402 payment protoco
 
 - 🚀 **One-Command Launch** - Start a full network with `npm run launch`
 - 🔧 **Mock Mode** - Test payment flows instantly without blockchain setup
+- ⚡ **Solana Devnet Integration** - Real on-chain payments with SOL
+- 🔐 **Escrow Program** - Secure payment escrow smart contract on Solana
 - 📦 **TypeScript SDK** - Client library with automatic payment handling
 - 🌐 **Multi-Node Network** - Simulate distributed API marketplace
 - ✅ **Comprehensive Tests** - >80% test coverage with unit and E2E tests
@@ -107,7 +109,14 @@ You'll see the full payment flow in action:
 
 ## 📖 Usage
 
-### Using the TypeScript SDK
+### Mock Mode vs Devnet Mode
+
+X402 Sandbox supports two modes:
+
+- **Mock Mode** (default): Fast local testing without blockchain. Accepts any payment proof.
+- **Devnet Mode**: Real Solana devnet integration with actual on-chain transactions.
+
+### Using the TypeScript SDK (Mock Mode)
 
 The SDK automatically handles the entire x402 payment flow:
 
@@ -133,6 +142,49 @@ const response = await client.requestWithAutoPay(
 const data = await response.json();
 console.log(data.result);
 ```
+
+### Using the TypeScript SDK (Devnet Mode)
+
+For testing with real Solana devnet transactions:
+
+```typescript
+import { X402Client, createTestKeypair, requestAirdrop } from './src/sdk';
+import { Connection } from '@solana/web3.js';
+
+// Create a test keypair (or load your existing wallet)
+const payerKeypair = createTestKeypair();
+
+// Request SOL airdrop for testing
+const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
+await requestAirdrop(connection, payerKeypair.publicKey, 1);
+
+// Create client in devnet mode
+const client = new X402Client({
+  mode: 'devnet',
+  solanaKeypair: payerKeypair,
+  solanaRpcUrl: 'https://api.devnet.solana.com',
+});
+
+// Make request - SDK creates real Solana transaction
+const response = await client.requestWithAutoPay(
+  'http://localhost:4000/inference',
+  {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ prompt: 'Hello, Solana!' }),
+  }
+);
+
+const data = await response.json();
+console.log(data.result);
+```
+
+**Prerequisites for Devnet Mode:**
+1. Start facilitator in devnet mode: `FACILITATOR_MODE=devnet npm run dev:facilitator`
+2. Set seller wallet address: `SELLER_WALLET_ADDRESS=<your-solana-address> npm run dev:seller`
+3. Ensure your wallet has devnet SOL (use `solana airdrop` or the SDK's `requestAirdrop()`)
+
+See [`examples/devnet-client.ts`](examples/devnet-client.ts) for a complete example.
 
 ### Manual Payment Flow
 
@@ -195,12 +247,25 @@ See [`examples/manual-flow.ts`](examples/manual-flow.ts) for a complete step-by-
 
 Explore different use cases:
 
-### Simple Client
+### Simple Client (Mock Mode)
 
 Basic SDK usage with automatic payment:
 
 ```bash
 tsx examples/simple-client.ts
+```
+
+### Devnet Client (Real Solana)
+
+Test with real Solana devnet transactions:
+
+```bash
+# Start services in devnet mode
+FACILITATOR_MODE=devnet npm run dev:facilitator  # Terminal 1
+SELLER_WALLET_ADDRESS=<address> PRODUCT_CURRENCY=SOL npm run dev:seller  # Terminal 2
+
+# Run devnet client
+tsx examples/devnet-client.ts  # Terminal 3
 ```
 
 ### Multi-Seller Demo
@@ -252,23 +317,83 @@ x402-sandbox/
 │   ├── mock-seller/         # HTTP 402 payment-gated API server
 │   ├── mock-facilitator/    # Payment verification service
 │   ├── sdk/                 # TypeScript client SDK
+│   │   ├── index.ts         # Main SDK exports
+│   │   ├── solana-utils.ts  # Solana payment utilities
+│   │   └── solana-program-client.ts  # Escrow program client
 │   └── launcher/            # Multi-node network launcher
+│
+├── solana-program/          # Solana smart contract (Rust/Anchor)
+│   ├── programs/
+│   │   └── x402_escrow/     # Escrow program source
+│   ├── Anchor.toml          # Anchor configuration
+│   └── README.md            # Program documentation
 │
 ├── tests/
 │   ├── unit/                # Unit tests (SDK, verifier)
 │   └── e2e/                 # End-to-end flow tests
 │
 ├── examples/                # Usage examples
-│   ├── simple-client.ts
-│   ├── multi-seller-demo.ts
-│   └── manual-flow.ts
+│   ├── simple-client.ts     # Mock mode example
+│   ├── devnet-client.ts     # Devnet mode example
+│   ├── multi-seller-demo.ts # Multi-node example
+│   └── manual-flow.ts       # Step-by-step flow
 │
 ├── docs/
 │   ├── API.md              # Complete API reference
 │   ├── ARCHITECTURE.md     # Architecture deep-dive
 │   └── CONTRIBUTING.md     # Contribution guidelines
 │
+├── DEPLOYMENT.md           # Solana program deployment guide
 └── dist/                   # Compiled JavaScript (generated)
+```
+
+---
+
+## 🔐 Solana Program Deployment
+
+The X402 Sandbox includes a Solana smart contract (program) for secure payment escrow. This is **required for hackathon submission**.
+
+### 🚀 Quick Start (15 minutes)
+
+**New to Solana?** Follow our step-by-step guide: **[QUICKSTART_DEVNET.md](QUICKSTART_DEVNET.md)**
+
+**Experienced?** Quick commands:
+
+```bash
+# Install tools
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+sh -c "$(curl -sSfL https://release.solana.com/stable/install)"
+cargo install --git https://github.com/coral-xyz/anchor avm --locked --force
+avm install 0.29.0 && avm use 0.29.0
+
+# Deploy
+cd solana-program
+anchor build
+anchor deploy
+```
+
+**Guides**:
+- 📘 [Quick Start Guide](QUICKSTART_DEVNET.md) - 15-minute setup
+- 📗 [Full Deployment Guide](DEPLOYMENT.md) - Detailed instructions
+- 📕 [Integration Summary](SOLANA_INTEGRATION.md) - Technical overview
+
+### Program Features
+
+- **Payment Escrow**: Secure on-chain payment holding
+- **Automatic Release**: Funds released after verification
+- **Refund Support**: Expired payments can be refunded
+- **PDA-based Security**: Program Derived Addresses for account security
+
+### Using the Escrow Program
+
+Enable in SDK:
+
+```typescript
+const client = new X402Client({
+  mode: 'devnet',
+  solanaKeypair: payerKeypair,
+  useEscrowProgram: true,  // Enable escrow program
+});
 ```
 
 ---
@@ -452,10 +577,12 @@ See [Architecture Documentation](docs/ARCHITECTURE.md#security-considerations) f
 - ✅ Multi-node network launcher
 - ✅ Comprehensive test suite
 - ✅ Complete documentation
+- ✅ Solana devnet integration (SOL transfers)
 
 ### Planned Features
 
-- [ ] Solana devnet integration (real transaction verification)
+- [ ] SPL Token support (USDC, USDT on devnet)
+- [ ] Solana smart contract for escrow/verification
 - [ ] Web dashboard for network visualization
 - [ ] Subscription payment support
 - [ ] Multi-chain support (Ethereum, Bitcoin Lightning)

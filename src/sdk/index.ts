@@ -1,3 +1,10 @@
+import { Keypair } from '@solana/web3.js';
+import { createSolanaPayment, SolanaPaymentConfig } from './solana-utils';
+
+// Export Solana utilities for external use
+export * from './solana-utils';
+export * from './solana-program-client';
+
 export interface PaymentRequirements {
   id: string;
   product: string;
@@ -6,10 +13,12 @@ export interface PaymentRequirements {
   chain: string;
   facilitator: string;
   expires_at: string;
+  recipient?: string; // Seller's wallet address for devnet payments
 }
 
 export interface PaymentProof {
   signature?: string;
+  transaction?: string; // Solana transaction signature for devnet
   timestamp: string;
   payer: string;
 }
@@ -18,17 +27,33 @@ export interface X402ClientOptions {
   facilitatorUrl?: string;
   mode?: 'mock' | 'devnet';
   payerIdentity?: string;
+  solanaKeypair?: Keypair; // Required for devnet mode
+  solanaRpcUrl?: string;
+  useEscrowProgram?: boolean; // If true, use on-chain escrow program (more secure)
 }
 
 export class X402Client {
   private facilitatorUrl?: string;
   private mode: 'mock' | 'devnet';
   private payerIdentity: string;
+  private solanaKeypair?: Keypair;
+  private solanaRpcUrl?: string;
+  private useEscrowProgram: boolean;
 
   constructor(options: X402ClientOptions = {}) {
     this.facilitatorUrl = options.facilitatorUrl;
     this.mode = options.mode || 'mock';
-    this.payerIdentity = options.payerIdentity || 'mock-wallet-' + Math.random().toString(36).substring(7);
+    this.solanaKeypair = options.solanaKeypair;
+    this.solanaRpcUrl = options.solanaRpcUrl;
+    this.useEscrowProgram = options.useEscrowProgram || false;
+
+    if (this.mode === 'devnet' && !this.solanaKeypair) {
+      throw new Error('solanaKeypair is required for devnet mode');
+    }
+
+    this.payerIdentity = options.payerIdentity ||
+      (this.solanaKeypair ? this.solanaKeypair.publicKey.toBase58() :
+       'mock-wallet-' + Math.random().toString(36).substring(7));
   }
 
   async requestWithAutoPay(url: string, init: RequestInit = {}): Promise<Response> {
@@ -81,7 +106,44 @@ export class X402Client {
         signature: `mock-proof-${requirements.id}`,
       };
     } else {
-      throw new Error('Devnet mode not yet implemented');
+      // Devnet mode - create real Solana transaction
+      if (!this.solanaKeypair) {
+        throw new Error('Solana keypair required for devnet payments');
+      }
+
+      if (!requirements.recipient) {
+        throw new Error('Payment requirements missing recipient wallet address for devnet payment');
+      }
+
+      console.log(`[SDK] Creating Solana payment: ${requirements.amount} ${requirements.currency} to ${requirements.recipient}`);
+
+      const config: SolanaPaymentConfig = {
+        rpcUrl: this.solanaRpcUrl,
+        payerKeypair: this.solanaKeypair,
+        commitment: 'confirmed',
+        useProgram: this.useEscrowProgram,
+        requestId: requirements.id, // Pass request ID for program mode
+      };
+
+      try {
+        const txSignature = await createSolanaPayment(
+          config,
+          requirements.recipient,
+          requirements.amount,
+          requirements.currency
+        );
+
+        console.log(`[SDK] Payment transaction sent: ${txSignature}`);
+
+        return {
+          timestamp: new Date().toISOString(),
+          payer: this.payerIdentity,
+          transaction: txSignature,
+          signature: txSignature, // Use transaction signature as proof
+        };
+      } catch (error) {
+        throw new Error(`Failed to create Solana payment: ${error instanceof Error ? error.message : String(error)}`);
+      }
     }
   }
 

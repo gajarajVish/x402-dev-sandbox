@@ -184,7 +184,55 @@ Format: `mock-sig:<hex-string>`
 
 ### Mock Mode vs Devnet Mode
 - **Mock Mode**: No real blockchain transactions, accepts any proof
-- **Devnet Mode**: Not yet implemented, will use real Solana devnet
+- **Devnet Mode**: Uses real Solana devnet transactions for payment verification
+
+### 3. Devnet Client (`devnet-client.ts`)
+
+Demonstrates real Solana devnet payment flow:
+
+```bash
+# Terminal 1: Start facilitator in devnet mode
+FACILITATOR_MODE=devnet npm run dev:facilitator
+
+# Terminal 2: Start seller with wallet address
+SELLER_WALLET_ADDRESS=<your-solana-address> PRODUCT_CURRENCY=SOL npm run dev:seller
+
+# Terminal 3: Run devnet client
+tsx examples/devnet-client.ts
+```
+
+**What it does:**
+- Creates a new Solana keypair for testing
+- Requests SOL airdrop from devnet
+- Makes payment using real Solana transaction
+- Verifies transaction on-chain
+- Completes API request with verified payment
+
+**Output:**
+```
+🚀 Starting Devnet X402 Client Example
+
+👛 Payer wallet: 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU
+
+💰 Requesting airdrop from Solana devnet...
+✅ Airdrop successful: 2ZE7ty...
+
+📞 Making request to seller API...
+
+[SDK] Payment required: 1000 SOL
+[SDK] Creating Solana payment: 1000 SOL to 5rQ8nV...
+[SDK] Payment transaction sent: 3nZ6y...
+[SDK] Payment verified
+✅ Response status: 200
+
+📦 Response data:
+   Result: Processed inference for: "Explain how..."
+   Model: mock-model-v1
+   Cost charged: 1000 minor units
+   Timestamp: 2025-11-08T...
+
+✨ Example completed successfully!
+```
 
 ## Troubleshooting
 

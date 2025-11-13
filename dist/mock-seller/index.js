@@ -15,10 +15,11 @@ const PORT = parseInt(process.env.SELLER_PORT || '4000', 10);
 const FACILITATOR_URL = process.env.FACILITATOR_URL || 'http://localhost:5000/verify';
 const PRODUCT_AMOUNT = parseInt(process.env.PRODUCT_AMOUNT || '1000', 10);
 const PRODUCT_CURRENCY = process.env.PRODUCT_CURRENCY || 'USDC';
+const SELLER_WALLET_ADDRESS = process.env.SELLER_WALLET_ADDRESS; // Optional for devnet mode
 function generatePaymentRequirements() {
     const reqId = `req_${crypto_1.default.randomBytes(8).toString('hex')}`;
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
-    return {
+    const requirements = {
         id: reqId,
         product: 'api_inference_v1',
         amount: PRODUCT_AMOUNT,
@@ -27,10 +28,15 @@ function generatePaymentRequirements() {
         facilitator: FACILITATOR_URL,
         expires_at: expiresAt.toISOString(),
     };
+    // Include recipient address if configured (for devnet payments)
+    if (SELLER_WALLET_ADDRESS) {
+        requirements.recipient = SELLER_WALLET_ADDRESS;
+    }
+    return requirements;
 }
 function isValidPaymentToken(token) {
-    // Accept mock tokens starting with "mock-sig:"
-    return token.startsWith('mock-sig:');
+    // Accept mock tokens and devnet tokens
+    return token.startsWith('mock-sig:') || token.startsWith('devnet-sig:');
 }
 app.get('/health', (_req, res) => {
     res.json({ status: 'ok', service: 'mock-seller', port: PORT });
